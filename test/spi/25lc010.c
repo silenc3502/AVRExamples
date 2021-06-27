@@ -31,7 +31,7 @@ void eeprom_send_address (uint8_t address)
   eeprom_change_byte(address);
 }
 
-uint8_t eeprom_read_byte(uint8_t address)
+uint8_t eeprom_read_byte (uint8_t address)
 {
   // EEPROM 선택
   EEPROM_SELECT();
@@ -46,4 +46,64 @@ uint8_t eeprom_read_byte(uint8_t address)
   EEPROM_DESELECT();
   
   return SPDR;
+}
+
+void eeprom_write_enable (void)
+{
+  // Slave Select를 LOW
+  EEPROM_SELECT();
+  // 쓰기 가능하도록 설정
+  EEPROM_change_byte(EEPROM_WREN);
+  // Slave Select를 HIGH
+  EEPROM_DESELECT();
+}
+
+void eeprom_write_byte (uint8_t address, uint8_t data)
+{
+  // 쓰기 가능 모드로 설정
+  EEPROM_write_enable();
+  // EEPROM 선택
+  EEPROM_SELECT();
+  // 쓰기 명령 전송
+  EEPROM_change_byte(EEPROM_WRITE);
+  // 주소 전송
+  EEPROM_send_address(address);
+  // 데이터 전송
+  EEPROM_change_byte(data);
+  // EEPROM 선택 해제
+  EEPROM_DESELECT();
+  
+  // 쓰기가 완료될 때까지 대기
+  while (EEPROM_read_status() & _BV(EEPROM_WRITE_IN_PROGRESS))
+  {
+    ;
+  }
+}
+
+uint8_t EEPROM_read_status (void)
+{
+  // EEPROM 선택
+  EEPROM_SELECT();
+  // 상태 레지스터 읽기 명령 전송
+  EEPROM_change_byte(EEPROM_RDSR);
+  // 상태 레지스터 값 읽기
+  EEPROM_change_byte(0);
+  // EEPROM 선택 해제
+  EEPROM_DESELECT();
+  
+  return SPDR;
+}
+
+void EEPROM_erase_all (void)
+{
+  uint8_t i;
+  uint16_t page_address = 0;
+  
+  while (page_address < EEPROM_TOTAL_BYTE)
+  {
+    EEPROM_write_enable();
+    EEPROM_SELECT();
+    EEPROM_change_byte(EEPROM_WRITE);
+    
+  }
 }
